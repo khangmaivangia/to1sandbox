@@ -75,6 +75,23 @@ const objectCopy: Record<Exclude<ObjectId, null>, { title: string; type: string;
   market: { title: "CHỢ HUYỆN 02", type: "PHÂN PHỐI ĐỊA PHƯƠNG", lines: ["Hàng khô · đủ 9 ngày", "Giá gạo · ổn định", "Phục vụ · 34.000 người"] },
 };
 
+const distributedFarms = [
+  ["A1", 10, 20], ["A2", 28, 18], ["B1", 47, 16], ["B2", 66, 22], ["C1", 18, 39], ["C2", 43, 42], ["D1", 70, 39],
+];
+const reserveNodes = [
+  ["K1", 8, 64], ["K2", 22, 59], ["K3", 37, 68], ["K4", 52, 61], ["K5", 67, 68], ["K6", 79, 56], ["K7", 88, 68], ["K8", 60, 31],
+];
+const cityNodes = [
+  ["TP. HÀ NỘI", 78, 44], ["TP. ĐÀ NẴNG", 86, 52], ["TP. HỒ CHÍ MINH", 91, 66], ["CẦN THƠ", 72, 76], ["HẢI PHÒNG", 92, 33],
+];
+const roadNetwork = Array.from({ length: 30 }, (_, index) => ({
+  id: index + 1,
+  left: 7 + (index % 6) * 16,
+  top: 27 + Math.floor(index / 6) * 10,
+  width: 115 + (index % 4) * 24,
+  rotate: index % 2 ? -9 : 8,
+}));
+
 function WorldLabel({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return <div className={`world-label ${className}`}><strong>{title}</strong><span>{children}</span></div>;
 }
@@ -137,8 +154,9 @@ function Home() {
     dragState.current = { x: event.clientX, y: event.clientY, ox: camera.x, oy: camera.y };
   };
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragState.current) return;
-    setCamera((current) => ({ ...current, x: dragState.current!.ox + event.clientX - dragState.current!.x, y: dragState.current!.oy + event.clientY - dragState.current!.y }));
+    const drag = dragState.current;
+    if (!drag) return;
+    setCamera((current) => ({ ...current, x: drag.ox + event.clientX - drag.x, y: drag.oy + event.clientY - drag.y }));
   };
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => { event.preventDefault(); setCamera((current) => ({ ...current, zoom: Math.max(.68, Math.min(1.52, current.zoom + (event.deltaY > 0 ? -.06 : .06))) })); };
   const handlePointerUp = () => { dragState.current = null; };
@@ -154,6 +172,7 @@ function Home() {
           {Array.from({ length: 12 }, (_, index) => <span key={index} />)}
         </div><div className={`farm-field field-b ${has("drought") ? "dry" : has("flood") ? "flooded" : ""}`}>{Array.from({ length: 9 }, (_, index) => <span key={index} />)}</div><div className="farm-field field-c">{Array.from({ length: 8 }, (_, index) => <span key={index} />)}</div><div className={`flood-zone ${has("flood") ? "visible" : ""}`} />
         <svg className="map-routes" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"><path className={`road road-main ${has("flood") ? "blocked" : ""} ${selected === "route" ? "selected" : ""}`} d="M190 472 C330 440 406 375 540 388 C665 402 745 493 1014 486" /><path className={`road road-alt ${has("flood") || has("trade") || has("transport") ? "active" : ""}`} d="M193 472 C355 560 467 560 604 500 C725 447 826 320 1025 300" /><path className={`road road-port ${has("trade") ? "blocked" : ""}`} d="M1025 300 C1070 276 1094 246 1115 205" /><path className="road road-north" d="M575 305 C690 226 796 206 972 224" /><path className="irrigation" d="M295 175 C340 225 360 280 348 353 M320 218 C375 216 416 226 457 244" /></svg>
+        <div className="distributed-network">{roadNetwork.map((road) => <span key={road.id} className="distributed-road" style={{ left: `${road.left}%`, top: `${road.top}%`, width: `${road.width}px`, transform: `rotate(${road.rotate}deg)` }}><Route size={8} /></span>)}</div><div className="distributed-farms">{distributedFarms.map(([id, left, top]) => <button key={id} type="button" className="distributed-node farm-node" style={{ left: `${left}%`, top: `${top}%` }} onClick={() => selectObject("farm")} aria-label={`Nông trại ${id}`}><Sprout size={15} /><b>{id}</b></button>)}</div><div className="distributed-reserves">{reserveNodes.map(([id, left, top]) => <button key={id} type="button" className="distributed-node reserve-node" style={{ left: `${left}%`, top: `${top}%` }} onClick={() => selectObject("warehouse")} aria-label={`Kho dự trữ ${id}`}><Warehouse size={14} /><b>{id}</b></button>)}</div><div className="distributed-cities">{cityNodes.map(([name, left, top]) => <button key={name} type="button" className="distributed-node city-node" style={{ left: `${left}%`, top: `${top}%` }} onClick={() => selectObject("town")} aria-label={String(name)}><Building2 size={16} /><b>{name}</b></button>)}</div>
         <div className={`route-flow route-flow-a ${has("flood") || has("transport") ? "rerouted" : ""}`}><Truck size={22} /></div><div className="route-flow route-flow-b"><Truck size={22} /></div><div className={`route-flow route-flow-c ${has("trade") ? "delayed" : ""}`}><Truck size={20} /></div><div className="route-flow route-flow-d"><Truck size={18} /></div><div className="fleet-trucks">{Array.from({ length: 6 }, (_, index) => <div className={`fleet-truck fleet-truck-${index + 1}`} key={index}><Truck size={17} /></div>)}</div><div className={`air-fleet ${upgraded("air") ? "enhanced" : ""}`}><div className="air-route" /><div className="aircraft aircraft-a"><Plane size={19} /></div><div className="aircraft aircraft-b"><Plane size={17} /></div><div className="aircraft aircraft-c"><Plane size={15} /></div></div><div className={`ship-fleet ${upgraded("sea") ? "enhanced" : ""}`}><Ship size={24} /><Ship size={20} /><Ship size={17} /></div>
 
         <button className={`map-object farm-object ${selected === "farm" ? "selected" : ""}`} onClick={() => selectObject("farm")}><div className="farm-building"><span className="roof" /><Factory size={30} /><span className="farm-door" /></div><div className="crop-patches"><span /><span /><span /></div><div className="farm-machine"><Truck size={16} /></div></button><WorldLabel title="NÔNG TRẠI A" className="farm-label">Sản lượng: {metrics.production}% · Nước: {has("drought") ? "41%" : "67%"} · <b>{has("technology") ? "CÔNG NGHỆ CAO" : "BÌNH THƯỜNG"}</b></WorldLabel><div className="drone drone-a"><SatelliteDish size={18} /></div><div className="sensor-beacon sensor-a"><Radio size={14} /></div><div className={`warning-burst farm-warning ${has("drought") || has("disease") ? "visible" : ""}`}><AlertTriangle size={16} /><span>{has("disease") ? "TÍN HIỆU DỊCH" : "THIẾU NƯỚC"}</span></div>
