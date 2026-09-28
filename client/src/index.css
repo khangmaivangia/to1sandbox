@@ -108,3 +108,6 @@ button:not(:disabled) { cursor:pointer; }
 /* VÒNG GIÁ TRỊ DẠNG POP-UP */
 .cycle-launcher { position:fixed; z-index:80; right:22px; bottom:50px; display:flex; align-items:center; gap:6px; padding:8px 10px; border:0 !important; border-radius:0 !important; color:#f2c56e; background:#253b2d; box-shadow:5px 5px 0 rgba(3,15,12,.34); font-size:8px; letter-spacing:.09em; transition:transform .18s var(--ease-out),background .18s var(--ease-out); }.cycle-launcher:hover,.cycle-launcher.active { color:#15261f; background:#f2c56e; transform:translateY(-2px); }.value-cycle { transition:opacity .2s var(--ease-out),transform .2s var(--ease-out),visibility .2s; transform-origin:bottom right; }.value-cycle.is-closed { opacity:0; visibility:hidden; pointer-events:none; transform:translateY(10px) scale(.96); }.value-cycle.is-open { opacity:1; visibility:visible; pointer-events:auto; transform:translateY(0) scale(1); }
 @media (max-width:640px) { .cycle-launcher { right:10px; bottom:50px; }.value-cycle { right:10px; bottom:92px; } }
+
+/* KÉO BẢN ĐỒ TỰ DO, KHÔNG KẸT POINTER */
+.world-viewport { user-select:none; -webkit-user-select:none; overscroll-behavior:none; }.world-viewport img,.world-viewport svg { user-select:none; -webkit-user-drag:none; }

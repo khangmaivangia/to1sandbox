@@ -129,7 +129,7 @@ function Home() {
   const [tick, setTick] = useState(0);
   const [upgrades, setUpgrades] = useState<string[]>([]);
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
-  const dragState = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+  const dragState = useRef<{ x: number; y: number; ox: number; oy: number; pointerId: number } | null>(null);
   const active = scenarios.filter((item) => activeScenarios.includes(item.id));
   const has = (id: ScenarioId) => activeScenarios.includes(id);
   const upgraded = (id: string) => upgrades.includes(id);
@@ -140,6 +140,25 @@ function Home() {
     const timer = window.setInterval(() => setTick((value) => (value + 1) % 100), 850);
     return () => window.clearInterval(timer);
   }, [paused]);
+
+  useEffect(() => {
+    const move = (event: PointerEvent) => {
+      const drag = dragState.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      setCamera((current) => ({ ...current, x: drag.ox + event.clientX - drag.x, y: drag.oy + event.clientY - drag.y }));
+    };
+    const release = () => { dragState.current = null; };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+      window.removeEventListener("blur", release);
+    };
+  }, []);
 
   const targetMetrics = useMemo(() => {
     const sum = (key: "production" | "reserves" | "access") => active.reduce((total, item) => total + item[key], 0);
@@ -189,16 +208,10 @@ function Home() {
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button")) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragState.current = { x: event.clientX, y: event.clientY, ox: camera.x, oy: camera.y };
-  };
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragState.current;
-    if (!drag) return;
-    setCamera((current) => ({ ...current, x: drag.ox + event.clientX - drag.x, y: drag.oy + event.clientY - drag.y }));
+    event.preventDefault();
+    dragState.current = { x: event.clientX, y: event.clientY, ox: camera.x, oy: camera.y, pointerId: event.pointerId };
   };
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => { event.preventDefault(); setCamera((current) => ({ ...current, zoom: Math.max(.68, Math.min(1.52, current.zoom + (event.deltaY > 0 ? -.06 : .06))) })); };
-  const handlePointerUp = () => { dragState.current = null; };
   const activeText = active.filter((item) => item.id !== "normal").map((item) => item.label).join(" + ") || "BÌNH THƯỜNG";
   const cycleStep = valueCycle[tick % valueCycle.length];
   const selectedUpgrade = selected === "farm" ? "farm" : selected === "warehouse" ? "water" : selected === "route" ? "road" : selected === "port" ? "sea" : selected === "town" ? "air" : null;
@@ -206,7 +219,7 @@ function Home() {
   return <main className={worldClass}>
     <div className="world-topline"><div className="world-brand"><span className="world-brand-mark"><Sprout size={16} /></span><div><strong>HỆ ĐIỀU HÀNH AN NINH LƯƠNG THỰC</strong><span>MÔ HÌNH SỐ · XÃ HỘI 07 · VIỆT NAM</span></div></div><div className="world-live"><span className="status-dot" /> TRẠNG THÁI THỰC <span className="world-clock">09:42:{String(18 + tick).padStart(2, "0")}</span></div></div>
 
-    <div className="world-viewport" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={handleWheel}>
+    <div className="world-viewport" onPointerDown={handlePointerDown} onWheel={handleWheel}>
       <div className="world-camera" style={mapStyle}><div className="world-map">
         <div className="map-sky"><div className="cloud cloud-a" /><div className="cloud cloud-b" /><div className="weather-rain" /><div className="storm-front" /></div><div className="network-summary"><span><b>7</b> nông trại</span><span><b>8</b> kho</span><span><b>5</b> thành phố</span><span><b>30</b> tuyến</span></div><div className="map-ground" /><div className="grass-layer">{Array.from({ length: 52 }, (_, index) => <span key={index} style={{ left: `${(index * 37) % 96}%`, top: `${18 + ((index * 19) % 62)}%`, transform: `rotate(${(index % 5) * 11 - 22}deg)` }} />)}</div><div className="flowing-water stream-a"><span /><span /><span /><span /></div><div className={`salt-front ${has("salinity") ? "visible" : ""}`} /><div className={`fire-zone ${has("wildfire") ? "visible" : ""}`} /><div className={`blackout-zone ${has("power") ? "visible" : ""}`} /><div className={`landslide-zone ${has("landslide") ? "visible" : ""}`} /><div className="water-body river-a" /><div className="water-body reservoir-a" /><div className={`drought-cracks ${has("drought") ? "visible" : ""}`} /><div className={`disease-spread ${has("disease") ? "visible" : ""}`} /><div className="terrain-hill hill-a" /><div className="terrain-hill hill-b" /><div className="terrain-hill hill-c" />
         <div className={`farm-field field-a ${has("drought") || has("disease") ? "stressed" : ""}`}>
