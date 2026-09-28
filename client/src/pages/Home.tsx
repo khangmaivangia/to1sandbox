@@ -40,7 +40,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 
-type ScenarioId = "normal" | "drought" | "flood" | "disease" | "trade" | "technology" | "transport";
+type ScenarioId = "normal" | "drought" | "flood" | "disease" | "trade" | "technology" | "transport" | "power" | "salinity" | "wildfire" | "landslide";
 type ObjectId = "farm" | "warehouse" | "route" | "town" | "sensor" | "port" | "market" | null;
 
 type Scenario = {
@@ -64,6 +64,10 @@ const scenarios: Scenario[] = [
   { id: "trade", label: "ĐỨT GÃY THƯƠNG MẠI", icon: Ship, color: "violet", event: "Tàu nhập khẩu trễ lịch tại Cảng Đông", effect: "Nguồn nội địa bù tải · chợ giữ giá", production: -5, reserves: -14, access: -10, tech: 0 },
   { id: "technology", label: "NÂNG CẤP CÔNG NGHỆ", icon: Cpu, color: "cyan", event: "Kích hoạt cảm biến 5G, drone và tưới thông minh", effect: "Năng suất tăng · phát hiện sớm · tiết kiệm nước", production: 12, reserves: 8, access: 4, tech: 1 },
   { id: "transport", label: "TỐI ƯU VẬN TẢI", icon: Route, color: "mint", event: "Thuật toán phân luồng mở tuyến thay thế", effect: "Xe tự đổi tuyến · thời gian giao giảm 28%", production: 0, reserves: 4, access: 11, tech: 1 },
+  { id: "power", label: "MẤT ĐIỆN DIỆN RỘNG", icon: Zap, color: "violet", event: "Trạm điện vùng bị quá tải theo dây chuyền", effect: "Kho chuyển máy phát · thành phố giảm công suất · xe chậm", production: -8, reserves: -6, access: -9, tech: 0 },
+  { id: "salinity", label: "XÂM NHẬP MẶN", icon: Droplets, color: "amber", event: "Nước mặn lan ngược vào vùng cửa sông", effect: "Đập ngăn mặn đóng · ruộng ven sông đổi mùa vụ", production: -12, reserves: -5, access: -3, tech: 0 },
+  { id: "wildfire", label: "CHÁY RỪNG", icon: Siren, color: "red", event: "Điểm nóng phát lửa do nắng kéo dài", effect: "Vùng đệm mở · drone cứu hỏa · đường bị phong tỏa", production: -9, reserves: -4, access: -8, tech: 0 },
+  { id: "landslide", label: "SẠT LỞ ĐẤT", icon: AlertTriangle, color: "violet", event: "Sườn đồi trượt sau mưa cực đoan", effect: "Ba tuyến bị chặn · xe chuyển sang vòng tránh", production: -4, reserves: -8, access: -14, tech: 0 },
 ];
 
 const objectCopy: Record<Exclude<ObjectId, null>, { title: string; type: string; lines: string[] }> = {
@@ -83,7 +87,7 @@ const reserveNodes = [
   ["K1", 8, 64], ["K2", 22, 59], ["K3", 37, 68], ["K4", 52, 61], ["K5", 67, 68], ["K6", 79, 56], ["K7", 88, 68], ["K8", 60, 31],
 ];
 const cityNodes = [
-  ["TP. HÀ NỘI", 55, 20], ["TP. ĐÀ NẴNG", 63, 35], ["TP. HỒ CHÍ MINH", 76, 61], ["CẦN THƠ", 63, 74], ["HẢI PHÒNG", 72, 24],
+  ["THÀNH PHỐ A", 55, 20], ["THÀNH PHỐ B", 63, 35], ["THÀNH PHỐ C", 76, 61], ["THÀNH PHỐ D", 63, 74], ["THÀNH PHỐ E", 72, 24],
 ];
 const roadNetwork = Array.from({ length: 30 }, (_, index) => ({
   id: index + 1,
@@ -102,6 +106,7 @@ function Home() {
   const [selected, setSelected] = useState<ObjectId>(null);
   const [paused, setPaused] = useState(false);
   const [consoleOpen, setConsoleOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const [upgrades, setUpgrades] = useState<string[]>([]);
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
@@ -126,7 +131,7 @@ function Home() {
       reserves: Math.max(38, Math.min(100, 84 + sum("reserves") + (upgraded("sea") ? 8 : 0))),
       access: Math.max(48, Math.min(100, 96 + sum("access") + transportBonus)),
       trucks: has("trade") ? "4 / 8" : has("flood") ? "5 / 8" : upgraded("road") ? "8 / 8" : "4 / 8",
-      risk: activeScenarios.length === 1 && has("normal") ? "THẤP" : activeScenarios.some((id) => ["drought", "flood", "disease", "trade"].includes(id)) ? "CAO" : "ĐANG GIẢM",
+      risk: activeScenarios.length === 1 && has("normal") ? "THẤP" : activeScenarios.some((id) => ["drought", "flood", "disease", "trade", "power", "salinity", "wildfire", "landslide"].includes(id)) ? "CAO" : "ĐANG GIẢM",
     };
   }, [activeScenarios, upgrades]);
 
@@ -181,7 +186,7 @@ function Home() {
 
     <div className="world-viewport" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={handleWheel}>
       <div className="world-camera" style={mapStyle}><div className="world-map">
-        <div className="map-sky"><div className="cloud cloud-a" /><div className="cloud cloud-b" /><div className="weather-rain" /><div className="storm-front" /></div><div className="network-summary"><span><b>7</b> nông trại</span><span><b>8</b> kho</span><span><b>5</b> thành phố</span><span><b>30</b> tuyến</span></div><div className="map-ground" /><div className="water-body river-a" /><div className="water-body reservoir-a" /><div className={`drought-cracks ${has("drought") ? "visible" : ""}`} /><div className={`disease-spread ${has("disease") ? "visible" : ""}`} /><div className="terrain-hill hill-a" /><div className="terrain-hill hill-b" /><div className="terrain-hill hill-c" />
+        <div className="map-sky"><div className="cloud cloud-a" /><div className="cloud cloud-b" /><div className="weather-rain" /><div className="storm-front" /></div><div className="network-summary"><span><b>7</b> nông trại</span><span><b>8</b> kho</span><span><b>5</b> thành phố</span><span><b>30</b> tuyến</span></div><div className="map-ground" /><div className="grass-layer">{Array.from({ length: 52 }, (_, index) => <span key={index} style={{ left: `${(index * 37) % 96}%`, top: `${18 + ((index * 19) % 62)}%`, transform: `rotate(${(index % 5) * 11 - 22}deg)` }} />)}</div><div className="flowing-water stream-a"><span /><span /><span /><span /></div><div className={`salt-front ${has("salinity") ? "visible" : ""}`} /><div className={`fire-zone ${has("wildfire") ? "visible" : ""}`} /><div className={`blackout-zone ${has("power") ? "visible" : ""}`} /><div className={`landslide-zone ${has("landslide") ? "visible" : ""}`} /><div className="water-body river-a" /><div className="water-body reservoir-a" /><div className={`drought-cracks ${has("drought") ? "visible" : ""}`} /><div className={`disease-spread ${has("disease") ? "visible" : ""}`} /><div className="terrain-hill hill-a" /><div className="terrain-hill hill-b" /><div className="terrain-hill hill-c" />
         <div className={`farm-field field-a ${has("drought") || has("disease") ? "stressed" : ""}`}>
           {Array.from({ length: 12 }, (_, index) => <span key={index} />)}
         </div><div className={`farm-field field-b ${has("drought") ? "dry" : has("flood") ? "flooded" : ""}`}>{Array.from({ length: 9 }, (_, index) => <span key={index} />)}</div><div className="farm-field field-c">{Array.from({ length: 8 }, (_, index) => <span key={index} />)}</div><div className={`flood-zone ${has("flood") ? "visible" : ""}`} />
@@ -213,7 +218,7 @@ function Home() {
 
     <button type="button" className={`console-launcher ${consoleOpen ? "active" : ""}`} onClick={() => setConsoleOpen((value) => !value)} aria-expanded={consoleOpen} aria-controls="scenario-console"><SlidersHorizontal size={15} /><span>{consoleOpen ? "ĐÓNG ĐIỀU KHIỂN" : "KỊCH BẢN"}</span></button><aside id="scenario-console" className={`scenario-console ${consoleOpen ? "is-open" : "is-closed"}`}><div className="console-head"><span><span className="status-dot" /> ĐIỀU KHIỂN KỊCH BẢN</span><span>{paused ? "THỦ CÔNG" : "TỰ ĐỘNG"}<button type="button" className="console-close" onClick={() => setConsoleOpen(false)} aria-label="Đóng điều khiển"><X size={13} /></button></span></div><div className="scenario-buttons">{scenarios.map((item) => { const Icon = item.icon; return <button key={item.id} title={item.label} className={activeScenarios.includes(item.id) ? `active ${item.color}` : ""} onClick={() => activate(item.id)}><Icon size={13} /><span>{item.label}</span></button>; })}</div><div className="technology-tree"><div className="technology-title"><Wrench size={11} /> CÂY NÂNG CẤP NĂNG LỰC</div><div className="technology-buttons"><button className={upgraded("farm") ? "upgraded" : ""} onClick={() => toggleUpgrade("farm")}><Sprout size={11} /> Nông trại</button><button className={upgraded("water") ? "upgraded" : ""} onClick={() => toggleUpgrade("water")}><Droplets size={11} /> Tưới thông minh</button><button className={upgraded("road") ? "upgraded" : ""} onClick={() => toggleUpgrade("road")}><Truck size={11} /> Xe nâng cấp</button><button className={upgraded("air") ? "upgraded" : ""} onClick={() => toggleUpgrade("air")}><Plane size={11} /> Không vận</button><button className={upgraded("sea") ? "upgraded" : ""} onClick={() => toggleUpgrade("sea")}><Ship size={11} /> Cảng biển</button></div></div><div className="active-stack"><span>ĐANG CHẠY ĐỒNG THỜI</span><strong>{activeText}{upgrades.length ? ` + ${upgrades.length} NÂNG CẤP` : ""}</strong></div><div className="console-event"><span className={`event-dot ${active[active.length - 1]?.color ?? "mint"}`} /><div><small>LUỒNG SỰ KIỆN / {activeText}</small><strong>{active[active.length - 1]?.event}</strong><span>{active[active.length - 1]?.effect}</span></div></div><div className="console-actions"><button onClick={() => setPaused((value) => !value)}>{paused ? <Play size={12} /> : <Pause size={12} />} {paused ? "TIẾP TỤC" : "TẠM DỪNG"}</button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })}>ĐẶT LẠI GÓC NHÌN</button></div></aside>
 
-    <aside className="world-metrics"><div className="metrics-head"><span>ĐO LƯỜNG XÃ HỘI</span><Activity size={12} /></div><div className="metric-row"><span>Sản lượng</span><b>{metrics.production}%</b><i style={{ width: `${metrics.production}%` }} /></div><div className="metric-row"><span>Dự trữ</span><b>{metrics.reserves}%</b><i className="amber" style={{ width: `${metrics.reserves}%` }} /></div><div className="metric-row"><span>Tiếp cận thực phẩm</span><b>{metrics.access}%</b><i className="cyan" style={{ width: `${metrics.access}%` }} /></div><div className="metrics-foot"><span>Rủi ro</span><b className={activeScenarios.length === 1 && has("normal") ? "good" : "warn"}>{metrics.risk}</b><span className="truck-count"><Truck size={12} /> {metrics.trucks}</span></div></aside>
+    <button type="button" className={`metrics-launcher ${metricsOpen ? "active" : ""}`} onClick={() => setMetricsOpen((value) => !value)} aria-expanded={metricsOpen} aria-controls="world-metrics"><Gauge size={14} /><span>{metricsOpen ? "ĐÓNG CHỈ SỐ" : "CHỈ SỐ"}</span></button><aside id="world-metrics" className={`world-metrics ${metricsOpen ? "is-open" : "is-closed"}`}><div className="metrics-head"><span>ĐO LƯỜNG XÃ HỘI</span><Activity size={12} /></div><div className="metric-row"><span>Sản lượng</span><b>{metrics.production}%</b><i style={{ width: `${metrics.production}%` }} /></div><div className="metric-row"><span>Dự trữ</span><b>{metrics.reserves}%</b><i className="amber" style={{ width: `${metrics.reserves}%` }} /></div><div className="metric-row"><span>Tiếp cận thực phẩm</span><b>{metrics.access}%</b><i className="cyan" style={{ width: `${metrics.access}%` }} /></div><div className="metrics-foot"><span>Rủi ro</span><b className={activeScenarios.length === 1 && has("normal") ? "good" : "warn"}>{metrics.risk}</b><span className="truck-count"><Truck size={12} /> {metrics.trucks}</span></div></aside>
     {selectedCopy && <aside className="object-inspector"><button className="inspector-close" onClick={() => setSelected(null)} aria-label="Đóng bảng thông tin"><X size={14} /></button><span className="inspector-type">{selectedCopy.type}</span><h2>{selectedCopy.title}</h2>{selectedCopy.lines.map((line) => <div className="inspector-line" key={line}>{line}</div>)}<div className="inspector-chain"><span>CHUỖI LIÊN KẾT</span><strong>nông trại <ArrowDownRight size={11} /> kho <ArrowDownRight size={11} /> vận tải <ArrowDownRight size={11} /> chợ</strong></div></aside>}
     <div className="zoom-controls"><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.min(1.52, current.zoom + .08) }))} aria-label="Phóng to"><Plus size={15} /></button><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.max(.68, current.zoom - .08) }))} aria-label="Thu nhỏ"><ZoomOut size={15} /></button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })} aria-label="Đặt lại"><MapPin size={14} /></button></div>
     <div className="world-statusbar"><span><span className="status-dot" /> 5 LUỒNG CẢM BIẾN TRỰC TUYẾN</span><span>DỮ LIỆU MÔ PHỎNG THỜI GIAN THỰC · KHÔNG CẦN MÁY CHỦ</span><span>HỆ THỐNG 55 / 30 / 15 ĐANG CHẠY</span></div>
