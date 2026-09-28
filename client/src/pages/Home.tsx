@@ -272,19 +272,32 @@ function Home() {
           </div>
 
           <div className="system-panel" id="system">
-            <div className="system-topline"><span className="system-title">Bản đồ vận hành / vòng lặp phản hồi</span><span><Wifi size={12} /> 99.98% tín hiệu ổn định</span></div>
+              <div className="system-topline"><span className="system-title">Bản đồ tích hợp / tất cả các mắt xích trong một vòng lặp</span><span><Wifi size={12} /> 99.98% tín hiệu ổn định</span></div>
             <div className="flow-stage">
-              <div className="flow-track" />
-              <FlowNode icon={Sprout} title="Nông nghiệp" subtitle="Sản xuất & cảm biến" />
-              <div className="flow-arrow"><ArrowRight size={17} /></div>
-              <FlowNode icon={Warehouse} title="Kho chiến lược" subtitle="Đệm an toàn" tone="amber" />
-              <div className="flow-arrow"><ArrowRight size={17} /></div>
-              <FlowNode icon={Siren} title="Cảnh báo sớm" subtitle="Phát hiện rủi ro" tone="amber" />
-              <div className="flow-arrow"><ArrowRight size={17} /></div>
-              <FlowNode icon={Truck} title="Mạng vận chuyển" subtitle="Đổi tuyến linh hoạt" tone="cyan" />
-              <div className="flow-arrow"><ArrowRight size={17} /></div>
-              <FlowNode icon={Globe2} title="Người dân" subtitle="Tiếp cận thực phẩm" />
+              <div className="integrated-diagram" aria-label="Sơ đồ tích hợp hệ thống an ninh lương thực">
+                <div className="diagram-grid-bg" />
+                <svg className="diagram-connections" viewBox="0 0 1000 420" role="img" aria-label="Các luồng kết nối từ sản xuất, kho, cảnh báo, vận chuyển tới người dân">
+                  <defs>
+                    <linearGradient id="mintFlow" x1="0" x2="1"><stop offset="0" stopColor="#9df3c5" stopOpacity=".12" /><stop offset=".5" stopColor="#9df3c5" stopOpacity=".9" /><stop offset="1" stopColor="#78d9ee" stopOpacity=".16" /></linearGradient>
+                    <linearGradient id="amberFlow" x1="0" x2="1"><stop offset="0" stopColor="#f8bd71" stopOpacity=".12" /><stop offset=".5" stopColor="#f8bd71" stopOpacity=".85" /><stop offset="1" stopColor="#9df3c5" stopOpacity=".12" /></linearGradient>
+                    <filter id="diagramGlow"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  </defs>
+                  <path className="diagram-line" d="M176 104 C260 104 280 178 377 198" stroke="url(#mintFlow)" />
+                  <path className="diagram-line" d="M824 104 C740 104 720 178 623 198" stroke="url(#amberFlow)" />
+                  <path className="diagram-line" d="M176 316 C260 316 280 246 377 224" stroke="url(#mintFlow)" />
+                  <path className="diagram-line" d="M824 316 C740 316 720 246 623 224" stroke="url(#amberFlow)" />
+                  <path className="diagram-line diagram-loop" d="M500 116 C774 0 1000 130 899 333 C798 536 222 536 101 333 C0 130 226 0 500 116" stroke="url(#mintFlow)" />
+                  <circle cx="500" cy="210" r="7" fill="#9df3c5" filter="url(#diagramGlow)" />
+                </svg>
+                <button className={`diagram-node diagram-production ${highlightedPillar === "production" ? "is-hot" : ""}`} onMouseEnter={() => setHighlightedPillar("production")} onMouseLeave={() => setHighlightedPillar(null)} onFocus={() => setHighlightedPillar("production")} onBlur={() => setHighlightedPillar(null)} onClick={() => { setExpandedPillar("production"); scrollTo("pillars"); }}><span className="diagram-node-icon"><Sprout size={20} /></span><span><b>55</b><strong> SẢN XUẤT</strong><small>nông nghiệp · dữ liệu</small></span></button>
+                <button className={`diagram-node diagram-reserves ${highlightedPillar === "production" ? "is-hot" : ""}`} onMouseEnter={() => setHighlightedPillar("production")} onMouseLeave={() => setHighlightedPillar(null)} onFocus={() => setHighlightedPillar("production")} onBlur={() => setHighlightedPillar(null)} onClick={() => { setExpandedPillar("production"); scrollTo("pillars"); }}><span className="diagram-node-icon amber"><Warehouse size={20} /></span><span><b>ĐỆM AN TOÀN</b><strong> KHO CHIẾN LƯỢC</strong><small>gạo · ngô · thực phẩm khô</small></span></button>
+                <button className={`diagram-node diagram-warning ${highlightedPillar === "warning" ? "is-hot" : ""}`} onMouseEnter={() => setHighlightedPillar("warning")} onMouseLeave={() => setHighlightedPillar(null)} onFocus={() => setHighlightedPillar("warning")} onBlur={() => setHighlightedPillar(null)} onClick={() => { setExpandedPillar("warning"); scrollTo("pillars"); }}><span className="diagram-node-icon amber"><Siren size={20} /></span><span><b>15</b><strong> CẢNH BÁO</strong><small>phát hiện · kích hoạt</small></span></button>
+                <button className={`diagram-node diagram-transport ${highlightedPillar === "transport" ? "is-hot" : ""}`} onMouseEnter={() => setHighlightedPillar("transport")} onMouseLeave={() => setHighlightedPillar(null)} onFocus={() => setHighlightedPillar("transport")} onBlur={() => setHighlightedPillar(null)} onClick={() => { setExpandedPillar("transport"); scrollTo("pillars"); }}><span className="diagram-node-icon cyan"><Truck size={20} /></span><span><b>30</b><strong> VẬN CHUYỂN</strong><small>nhiều tuyến · tiếp cận</small></span></button>
+                <button className="diagram-node diagram-access" onClick={() => scrollTo("simulation")}><span className="diagram-node-icon cyan"><Globe2 size={20} /></span><span><b>TIẾP CẬN</b><strong> NGƯỜI DÂN</strong><small>đúng nơi · đúng lúc</small></span></button>
+                <div className="diagram-hub"><div className="hub-pulse"><Activity size={18} /></div><strong>FOOD SECURITY OS</strong><span>MONITOR → DETECT → ACT</span><small>phản hồi liên tục</small></div>
+                <div className="diagram-signal signal-weather"><Thermometer size={11} /> thời tiết</div><div className="diagram-signal signal-crops"><Leaf size={11} /> mùa vụ</div><div className="diagram-signal signal-price"><DollarSign size={11} /> giá cả</div><div className="diagram-signal signal-reserve"><Package size={11} /> dự trữ</div><div className="diagram-signal signal-route"><Route size={11} /> tuyến đường</div>
               <span className="flow-status"><RefreshCw size={10} /> Vòng lặp liên tục <b>MONITOR AGAIN</b></span>
+              </div>
             </div>
             <div className="sensor-rail">
               <div className="sensor-chip"><span className="signal" /><Thermometer size={12} /><span>Thời tiết / 24 vùng</span></div>
