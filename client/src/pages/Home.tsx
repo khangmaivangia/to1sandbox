@@ -5,8 +5,10 @@ import {
   AlertTriangle,
   ArrowDownRight,
   Box,
+  Building2,
   CloudRain,
   CloudSun,
+  Cpu,
   Droplets,
   Factory,
   Gauge,
@@ -20,51 +22,56 @@ import {
   Route,
   SatelliteDish,
   Ship,
+  ShoppingBasket,
   Siren,
   Sprout,
+  Store,
   Thermometer,
   Truck,
   Users,
   Warehouse,
   Waves,
   Wind,
+  Wrench,
   X,
   Zap,
-  ZoomIn,
   ZoomOut,
 } from "lucide-react";
 
-type ScenarioId = "normal" | "drought" | "flood" | "disease" | "trade";
-type ObjectId = "farm" | "warehouse" | "route" | "town" | "sensor" | "port" | null;
+type ScenarioId = "normal" | "drought" | "flood" | "disease" | "trade" | "technology" | "transport";
+type ObjectId = "farm" | "warehouse" | "route" | "town" | "sensor" | "port" | "market" | null;
 
 type Scenario = {
   id: ScenarioId;
   label: string;
   icon: LucideIcon;
   color: string;
-  weather: string;
   event: string;
-  consequence: string;
-  productionDrop: number;
-  reserveDrop: number;
-  accessDrop: number;
+  effect: string;
+  production: number;
+  reserves: number;
+  access: number;
+  tech: number;
 };
 
 const scenarios: Scenario[] = [
-  { id: "normal", label: "NORMAL", icon: CloudSun, color: "mint", weather: "ỔN ĐỊNH · 28°C", event: "Mạng lưới đang vận hành bình thường", consequence: "Sản xuất và phân phối theo nhịp chuẩn", productionDrop: 0, reserveDrop: 0, accessDrop: 0 },
-  { id: "drought", label: "HẠN HÁN", icon: Wind, color: "amber", weather: "NẮNG GẮT · 39°C", event: "Cảm biến đất phát hiện thiếu nước ở Farm A", consequence: "Tưới tăng · kho mở luồng · xe đổi hướng", productionDrop: 21, reserveDrop: 19, accessDrop: 8 },
-  { id: "flood", label: "LŨ LỤT", icon: Waves, color: "cyan", weather: "MƯA LỚN · 212mm", event: "Vùng trũng phía nam bắt đầu ngập", consequence: "Đường thấp đóng · tuyến cao được kích hoạt", productionDrop: 15, reserveDrop: 13, accessDrop: 12 },
-  { id: "disease", label: "DỊCH BỆNH", icon: Siren, color: "red", weather: "CẢNH BÁO · VÙNG 04", event: "Bất thường sinh học được phát hiện trên mùa vụ", consequence: "Khoanh vùng · khử khuẩn · phân phối lại", productionDrop: 17, reserveDrop: 16, accessDrop: 7 },
-  { id: "trade", label: "GIÁN ĐOẠN THƯƠNG MẠI", icon: Ship, color: "violet", weather: "CẢNG TẮC · 48h", event: "Tàu nhập khẩu trễ lịch tại Cảng Đông", consequence: "Tuyến nội địa bù tải · giá được giữ ổn định", productionDrop: 5, reserveDrop: 14, accessDrop: 10 },
+  { id: "normal", label: "BÌNH THƯỜNG", icon: CloudSun, color: "mint", event: "Mạng lưới đang vận hành theo nhịp chuẩn", effect: "Mọi tuyến và chợ hoạt động bình thường", production: 0, reserves: 0, access: 0, tech: 0 },
+  { id: "drought", label: "HẠN HÁN", icon: Wind, color: "amber", event: "Cảm biến đất phát hiện thiếu nước ở vùng Nam", effect: "Tưới tăng · kho mở luồng · xe đổi hướng", production: -21, reserves: -19, access: -8, tech: 0 },
+  { id: "flood", label: "LŨ LỤT", icon: Waves, color: "cyan", event: "Vùng trũng phía Nam bắt đầu ngập", effect: "Đường thấp đóng · tuyến cao được kích hoạt", production: -15, reserves: -13, access: -12, tech: 0 },
+  { id: "disease", label: "DỊCH BỆNH", icon: Siren, color: "red", event: "Bất thường sinh học trên mùa vụ được phát hiện", effect: "Khoanh vùng · khử khuẩn · phân phối lại", production: -17, reserves: -16, access: -7, tech: 0 },
+  { id: "trade", label: "ĐỨT GÃY THƯƠNG MẠI", icon: Ship, color: "violet", event: "Tàu nhập khẩu trễ lịch tại Cảng Đông", effect: "Nguồn nội địa bù tải · chợ giữ giá", production: -5, reserves: -14, access: -10, tech: 0 },
+  { id: "technology", label: "NÂNG CẤP CÔNG NGHỆ", icon: Cpu, color: "cyan", event: "Kích hoạt cảm biến 5G, drone và tưới thông minh", effect: "Năng suất tăng · phát hiện sớm · tiết kiệm nước", production: 12, reserves: 8, access: 4, tech: 1 },
+  { id: "transport", label: "TỐI ƯU VẬN TẢI", icon: Route, color: "mint", event: "Thuật toán phân luồng mở tuyến thay thế", effect: "Xe tự đổi tuyến · thời gian giao giảm 28%", production: 0, reserves: 4, access: 11, tech: 1 },
 ];
 
 const objectCopy: Record<Exclude<ObjectId, null>, { title: string; type: string; lines: string[] }> = {
-  farm: { title: "FARM A", type: "SẢN XUẤT THÔNG MINH", lines: ["Production · 82%", "Water · 67%", "Status · monitoring"] },
-  warehouse: { title: "RESERVE", type: "KHO CHIẾN LƯỢC", lines: ["Rice · 8,420 t", "Corn · 3,210 t", "Capacity · 78%"] },
-  route: { title: "ROUTE 03", type: "MẠNG VẬN CHUYỂN", lines: ["Capacity · 91%", "Status · active", "Alt route · ready"] },
-  town: { title: "POPULATION", type: "TRUNG TÂM DÂN CƯ", lines: ["Population · 128,000", "Food availability · 96%", "Delivery · 18 min"] },
-  sensor: { title: "SENSOR 04", type: "EARLY WARNING", lines: ["Signal · humidity", "Last ping · 09:42:18", "Status · online"] },
-  port: { title: "EAST PORT", type: "NHẬP KHẨU", lines: ["Vessels · 03", "Throughput · 720 t/day", "Status · monitored"] },
+  farm: { title: "NÔNG TRẠI A", type: "SẢN XUẤT THÔNG MINH", lines: ["Sản lượng · 82%", "Nước tưới · 67%", "Trạng thái · đang theo dõi"] },
+  warehouse: { title: "KHO DỰ TRỮ BẮC", type: "KHO CHIẾN LƯỢC", lines: ["Gạo · 8.420 tấn", "Ngô · 3.210 tấn", "Sức chứa · 78%"] },
+  route: { title: "TUYẾN 03", type: "MẠNG VẬN CHUYỂN", lines: ["Công suất · 91%", "Trạng thái · đang mở", "Tuyến thay thế · sẵn sàng"] },
+  town: { title: "THÀNH PHỐ VỆ TINH", type: "TRUNG TÂM DÂN CƯ", lines: ["Dân số · 128.000", "Khả năng tiếp cận · 96%", "Giao hàng · 18 phút"] },
+  sensor: { title: "CẢM BIẾN 04", type: "CẢNH BÁO SỚM", lines: ["Tín hiệu · độ ẩm đất", "Lần gửi cuối · 09:42:18", "Trạng thái · trực tuyến"] },
+  port: { title: "CẢNG ĐÔNG", type: "NHẬP KHẨU & TRUNG CHUYỂN", lines: ["Tàu · 03", "Thông lượng · 720 tấn/ngày", "Trạng thái · đang theo dõi"] },
+  market: { title: "CHỢ HUYỆN 02", type: "PHÂN PHỐI ĐỊA PHƯƠNG", lines: ["Hàng khô · đủ 9 ngày", "Giá gạo · ổn định", "Phục vụ · 34.000 người"] },
 };
 
 function WorldLabel({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
@@ -72,13 +79,15 @@ function WorldLabel({ title, children, className = "" }: { title: string; childr
 }
 
 function Home() {
-  const [scenarioId, setScenarioId] = useState<ScenarioId>("normal");
+  const [activeScenarios, setActiveScenarios] = useState<ScenarioId[]>(["normal"]);
   const [selected, setSelected] = useState<ObjectId>(null);
   const [paused, setPaused] = useState(false);
   const [tick, setTick] = useState(0);
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
   const dragState = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
-  const scenario = scenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
+  const active = scenarios.filter((item) => activeScenarios.includes(item.id));
+  const has = (id: ScenarioId) => activeScenarios.includes(id);
+  const weather = has("flood") ? "MƯA LỚN · 212mm" : has("drought") ? "NẮNG GẮT · 39°C" : has("trade") ? "CẢNG TẮC · 48h" : "ỔN ĐỊNH · 28°C";
 
   useEffect(() => {
     if (paused) return;
@@ -87,25 +96,32 @@ function Home() {
   }, [paused]);
 
   const metrics = useMemo(() => {
+    const sum = (key: "production" | "reserves" | "access") => active.reduce((total, item) => total + item[key], 0);
     const wave = Math.round(Math.sin(tick / 5) * 2);
+    const techBonus = active.some((item) => item.id === "technology") ? 5 : 0;
+    const transportBonus = active.some((item) => item.id === "transport") ? 7 : 0;
     return {
-      production: Math.max(61, 92 - scenario.productionDrop + wave),
-      reserves: Math.max(45, 84 - Math.round(scenario.reserveDrop * (0.55 + (tick % 12) / 30))),
-      access: Math.max(54, 96 - scenario.accessDrop + Math.round(wave / 2)),
-      trucks: scenarioId === "trade" ? "2 / 3" : scenarioId === "flood" ? "2 / 3" : "3 / 3",
-      risk: scenarioId === "normal" ? "LOW" : scenarioId === "disease" ? "HIGH" : "ELEVATED",
+      production: Math.max(52, Math.min(100, 92 + sum("production") + techBonus + wave)),
+      reserves: Math.max(38, Math.min(100, 84 + sum("reserves") + wave)),
+      access: Math.max(48, Math.min(100, 96 + sum("access") + transportBonus)),
+      trucks: has("trade") ? "2 / 4" : has("flood") ? "3 / 4" : has("transport") ? "5 / 4" : "4 / 4",
+      risk: activeScenarios.length === 1 && has("normal") ? "THẤP" : activeScenarios.some((id) => ["drought", "flood", "disease", "trade"].includes(id)) ? "CAO" : "ĐANG GIẢM",
     };
-  }, [scenario, scenarioId, tick]);
+  }, [active, activeScenarios, has, tick]);
 
   const activate = (id: ScenarioId) => {
-    setScenarioId(id);
-    setSelected(null);
+    if (id === "normal") { setActiveScenarios(["normal"]); setSelected(null); setPaused(false); return; }
+    setActiveScenarios((current) => {
+      const withoutNormal = current.filter((item) => item !== "normal");
+      return withoutNormal.includes(id) ? (withoutNormal.length ? withoutNormal.filter((item) => item !== id) : ["normal"]) : [...withoutNormal, id];
+    });
     setPaused(false);
   };
 
   const selectObject = (id: Exclude<ObjectId, null>) => setSelected((current) => current === id ? null : id);
   const selectedCopy = selected ? objectCopy[selected] : null;
   const mapStyle = { transform: `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.zoom})` };
+  const worldClass = `world-app ${activeScenarios.map((id) => `co-${id}`).join(" ")}`;
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button")) return;
@@ -116,68 +132,54 @@ function Home() {
     if (!dragState.current) return;
     setCamera((current) => ({ ...current, x: dragState.current!.ox + event.clientX - dragState.current!.x, y: dragState.current!.oy + event.clientY - dragState.current!.y }));
   };
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => { event.preventDefault(); setCamera((current) => ({ ...current, zoom: Math.max(.68, Math.min(1.52, current.zoom + (event.deltaY > 0 ? -.06 : .06))) })); };
   const handlePointerUp = () => { dragState.current = null; };
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setCamera((current) => ({ ...current, zoom: Math.max(.72, Math.min(1.45, current.zoom + (event.deltaY > 0 ? -.06 : .06))) }));
-  };
+  const activeText = active.filter((item) => item.id !== "normal").map((item) => item.label).join(" + ") || "BÌNH THƯỜNG";
 
-  return <main className={`world-app scenario-${scenarioId}`}>
-    <div className="world-topline">
-      <div className="world-brand"><span className="world-brand-mark"><Sprout size={16} /></span><div><strong>FOOD SECURITY OS</strong><span>DIGITAL TWIN · SOCIETY 07</span></div></div>
-      <div className="world-live"><span className="status-dot" /> LIVE WORLD STATE <span className="world-clock">09:42:{String(18 + tick).padStart(2, "0")}</span></div>
-    </div>
+  return <main className={worldClass}>
+    <div className="world-topline"><div className="world-brand"><span className="world-brand-mark"><Sprout size={16} /></span><div><strong>HỆ ĐIỀU HÀNH AN NINH LƯƠNG THỰC</strong><span>MÔ HÌNH SỐ · XÃ HỘI 07 · VIỆT NAM</span></div></div><div className="world-live"><span className="status-dot" /> TRẠNG THÁI THỰC <span className="world-clock">09:42:{String(18 + tick).padStart(2, "0")}</span></div></div>
 
     <div className="world-viewport" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onWheel={handleWheel}>
-      <div className="world-camera" style={mapStyle}>
-        <div className="world-map">
-          <div className="map-sky"><div className="cloud cloud-a" /><div className="cloud cloud-b" /><div className="weather-rain" /></div>
-          <div className="map-ground" />
-          <div className="terrain-hill hill-a" /><div className="terrain-hill hill-b" />
-          <div className={`farm-field field-a ${scenarioId === "drought" || scenarioId === "disease" ? "stressed" : ""}`}>{Array.from({ length: 12 }, (_, index) => <span key={index} />)}</div>
-          <div className={`farm-field field-b ${scenarioId === "drought" ? "dry" : scenarioId === "flood" ? "flooded" : ""}`}>{Array.from({ length: 9 }, (_, index) => <span key={index} />)}</div>
-          <div className={`flood-zone ${scenarioId === "flood" ? "visible" : ""}`} />
-          <svg className="map-routes" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
-            <path className={`road road-main ${scenarioId === "flood" ? "blocked" : ""} ${selected === "route" ? "selected" : ""}`} d="M190 472 C330 440 406 375 540 388 C665 402 745 493 1014 486" />
-            <path className={`road road-alt ${scenarioId === "flood" || scenarioId === "trade" ? "active" : ""}`} d="M193 472 C355 560 467 560 604 500 C725 447 826 320 1025 300" />
-            <path className={`road road-port ${scenarioId === "trade" ? "blocked" : ""}`} d="M1025 300 C1070 276 1094 246 1115 205" />
-            <path className="irrigation" d="M295 175 C340 225 360 280 348 353 M320 218 C375 216 416 226 457 244" />
-          </svg>
-          <div className={`route-flow route-flow-a ${scenarioId === "flood" ? "rerouted" : ""}`}><Truck size={22} /></div><div className="route-flow route-flow-b"><Truck size={22} /></div><div className={`route-flow route-flow-c ${scenarioId === "trade" ? "delayed" : ""}`}><Truck size={20} /></div>
+      <div className="world-camera" style={mapStyle}><div className="world-map">
+        <div className="map-sky"><div className="cloud cloud-a" /><div className="cloud cloud-b" /><div className="weather-rain" /></div><div className="map-ground" /><div className="terrain-hill hill-a" /><div className="terrain-hill hill-b" /><div className="terrain-hill hill-c" />
+        <div className={`farm-field field-a ${has("drought") || has("disease") ? "stressed" : ""}`}>
+          {Array.from({ length: 12 }, (_, index) => <span key={index} />)}
+        </div><div className={`farm-field field-b ${has("drought") ? "dry" : has("flood") ? "flooded" : ""}`}>{Array.from({ length: 9 }, (_, index) => <span key={index} />)}</div><div className="farm-field field-c">{Array.from({ length: 8 }, (_, index) => <span key={index} />)}</div><div className={`flood-zone ${has("flood") ? "visible" : ""}`} />
+        <svg className="map-routes" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true"><path className={`road road-main ${has("flood") ? "blocked" : ""} ${selected === "route" ? "selected" : ""}`} d="M190 472 C330 440 406 375 540 388 C665 402 745 493 1014 486" /><path className={`road road-alt ${has("flood") || has("trade") || has("transport") ? "active" : ""}`} d="M193 472 C355 560 467 560 604 500 C725 447 826 320 1025 300" /><path className={`road road-port ${has("trade") ? "blocked" : ""}`} d="M1025 300 C1070 276 1094 246 1115 205" /><path className="road road-north" d="M575 305 C690 226 796 206 972 224" /><path className="irrigation" d="M295 175 C340 225 360 280 348 353 M320 218 C375 216 416 226 457 244" /></svg>
+        <div className={`route-flow route-flow-a ${has("flood") || has("transport") ? "rerouted" : ""}`}><Truck size={22} /></div><div className="route-flow route-flow-b"><Truck size={22} /></div><div className={`route-flow route-flow-c ${has("trade") ? "delayed" : ""}`}><Truck size={20} /></div><div className="route-flow route-flow-d"><Truck size={18} /></div>
 
-          <button className={`map-object farm-object ${selected === "farm" ? "selected" : ""}`} onClick={() => selectObject("farm")}><div className="farm-building"><span className="roof" /><Factory size={30} /><span className="farm-door" /></div><div className="crop-patches"><span /><span /><span /></div><div className="farm-machine"><Truck size={16} /></div></button>
-          <WorldLabel title="FARM A" className="farm-label">Production: {metrics.production}% · Water: {scenarioId === "drought" ? "41%" : "67%"} · <b>{scenarioId === "normal" ? "NORMAL" : "MONITORING"}</b></WorldLabel>
-          <div className="drone drone-a"><SatelliteDish size={18} /></div><div className="sensor-beacon sensor-a"><Radio size={14} /></div><div className={`warning-burst farm-warning ${scenarioId === "drought" || scenarioId === "disease" ? "visible" : ""}`}><AlertTriangle size={16} /><span>{scenarioId === "disease" ? "BIO SIGNAL" : "WATER LOW"}</span></div>
+        <button className={`map-object farm-object ${selected === "farm" ? "selected" : ""}`} onClick={() => selectObject("farm")}><div className="farm-building"><span className="roof" /><Factory size={30} /><span className="farm-door" /></div><div className="crop-patches"><span /><span /><span /></div><div className="farm-machine"><Truck size={16} /></div></button><WorldLabel title="NÔNG TRẠI A" className="farm-label">Sản lượng: {metrics.production}% · Nước: {has("drought") ? "41%" : "67%"} · <b>{has("technology") ? "CÔNG NGHỆ CAO" : "BÌNH THƯỜNG"}</b></WorldLabel><div className="drone drone-a"><SatelliteDish size={18} /></div><div className="sensor-beacon sensor-a"><Radio size={14} /></div><div className={`warning-burst farm-warning ${has("drought") || has("disease") ? "visible" : ""}`}><AlertTriangle size={16} /><span>{has("disease") ? "TÍN HIỆU DỊCH" : "THIẾU NƯỚC"}</span></div>
 
-          <button className={`map-object warehouse-object ${selected === "warehouse" ? "selected" : ""}`} onClick={() => selectObject("warehouse")}><div className="warehouse-building"><span className="warehouse-roof" /><Warehouse size={38} /><span className="warehouse-door" /></div><div className="inventory-pods"><span /><span /><span /></div></button>
-          <WorldLabel title="RESERVE" className="warehouse-label">Rice: 8,420 t · Corn: 3,210 t · Capacity: {metrics.reserves}%</WorldLabel>
-          <div className={`warehouse-flow ${scenarioId !== "normal" ? "active" : ""}`}><Box size={15} /><ArrowDownRight size={13} /><span>{scenarioId === "normal" ? "STANDBY" : "RELEASING FOOD"}</span></div>
+        <button className={`map-object warehouse-object ${selected === "warehouse" ? "selected" : ""}`} onClick={() => selectObject("warehouse")}><div className="warehouse-building"><span className="warehouse-roof" /><Warehouse size={38} /><span className="warehouse-door" /></div><div className="inventory-pods"><span /><span /><span /></div></button><WorldLabel title="KHO DỰ TRỮ BẮC" className="warehouse-label">Gạo: 8.420 tấn · Ngô: 3.210 tấn · Sức chứa: {metrics.reserves}%</WorldLabel><div className={`warehouse-flow ${activeScenarios.length > 1 ? "active" : ""}`}><Box size={15} /><ArrowDownRight size={13} /><span>{activeScenarios.length > 1 ? "ĐANG XUẤT HÀNG" : "SẴN SÀNG"}</span></div>
+        <button className={`map-object depot-object ${has("technology") ? "upgraded" : ""}`} onClick={() => selectObject("warehouse")}><div className="depot-building"><Warehouse size={24} /></div></button><WorldLabel title="KHO VÙNG NAM" className="depot-label">Dự trữ: 4.860 tấn · Đang luân chuyển</WorldLabel>
 
-          <button className={`map-object sensor-object ${selected === "sensor" ? "selected" : ""}`} onClick={() => selectObject("sensor")}><div className="sensor-tower"><span /><span /><SatelliteDish size={20} /></div></button><WorldLabel title="SENSOR 04" className="sensor-label">Humidity · {scenarioId === "drought" ? "31%" : "68%"} · {scenarioId === "normal" ? "ONLINE" : "ALERT"}</WorldLabel>
+        <button className={`map-object sensor-object ${selected === "sensor" ? "selected" : ""}`} onClick={() => selectObject("sensor")}><div className="sensor-tower"><span /><span /><SatelliteDish size={20} /></div></button><WorldLabel title="CẢM BIẾN 04" className="sensor-label">Độ ẩm: {has("drought") ? "31%" : "68%"} · {activeScenarios.length > 1 ? "CẢNH BÁO" : "TRỰC TUYẾN"}</WorldLabel>
 
-          <button className={`map-object town-object ${selected === "town" ? "selected" : ""}`} onClick={() => selectObject("town")}><div className="town-buildings"><span className="tower tall" /><span className="tower" /><span className="tower small" /><span className="tower" /><span className="town-square"><Users size={18} /></span></div><div className="town-road" /></button><WorldLabel title="POPULATION" className="town-label">128,000 · Food availability: {metrics.access}%</WorldLabel><div className="town-demand"><Gauge size={14} /><span>{metrics.access}% availability</span></div>
+        <button className={`map-object town-object ${selected === "town" ? "selected" : ""}`} onClick={() => selectObject("town")}><div className="town-buildings"><span className="tower tall" /><span className="tower" /><span className="tower small" /><span className="tower" /><span className="town-square"><Users size={18} /></span></div><div className="town-road" /></button><WorldLabel title="THÀNH PHỐ VỆ TINH" className="town-label">Dân số: 128.000 · Tiếp cận: {metrics.access}%</WorldLabel><div className="town-demand"><Gauge size={14} /><span>{metrics.access}% thực phẩm</span></div>
+        <div className="village village-a"><HomeIcon /><span>ẤP BÌNH MINH</span></div><div className="village village-b"><HomeIcon /><span>LÀNG SÔNG XANH</span></div>
 
-          <button className={`map-object port-object ${selected === "port" ? "selected" : ""}`} onClick={() => selectObject("port")}><div className="port-water" /><div className="port-crane"><span /><span /></div><Ship size={28} /><div className="port-boxes"><span /><span /><span /></div></button><WorldLabel title="EAST PORT" className="port-label">Vessels: 03 · Throughput: 720 t/day</WorldLabel>
-          <div className={`port-alert ${scenarioId === "trade" ? "visible" : ""}`}><Ship size={13} /> IMPORT DELAY · 48h</div>
+        <button className={`map-object port-object ${selected === "port" ? "selected" : ""}`} onClick={() => selectObject("port")}><div className="port-water" /><div className="port-crane"><span /><span /></div><Ship size={28} /><div className="port-boxes"><span /><span /><span /></div></button><WorldLabel title="CẢNG ĐÔNG" className="port-label">Tàu: 03 · Thông lượng: 720 tấn/ngày</WorldLabel><div className={`port-alert ${has("trade") ? "visible" : ""}`}><Ship size={13} /> CHẬM NHẬP · 48 GIỜ</div>
 
-          <div className="map-legend"><span><i className="legend-mint" /> production</span><span><i className="legend-amber" /> response</span><span><i className="legend-cyan" /> movement</span></div>
-          <div className="world-title-card"><span>MINIATURE SOCIETY / REAL-TIME FOOD FLOW</span><strong>Observe the system.<br />Watch it respond.</strong></div>
-        </div>
-      </div>
-      <div className="viewport-hint"><span>DRAG TO PAN</span><span>SCROLL TO ZOOM</span></div>
+        <button className={`map-object market-object market-one ${selected === "market" ? "selected" : ""}`} onClick={() => selectObject("market")}><div className="market-building"><Store size={23} /></div><div className="market-stalls"><span /><span /><span /></div></button><WorldLabel title="CHỢ HUYỆN 02" className="market-label">Hàng khô: 9 ngày · Giá gạo: ổn định</WorldLabel>
+        <button className="map-object market-object market-two" onClick={() => selectObject("market")}><div className="market-building"><ShoppingBasket size={23} /></div><div className="market-stalls"><span /><span /><span /></div></button><WorldLabel title="CHỢ ĐẦU MỐI 01" className="market-two-label">Phục vụ: 34.000 người · Mở cửa</WorldLabel>
+        <div className="distribution-center"><Building2 size={24} /><span>ĐIỂM PHÂN PHỐI</span></div>
+        <div className={`tech-pulse ${has("technology") ? "visible" : ""}`}><Cpu size={16} /><span>5G · MÁY BAY KHÔNG NGƯỜI LÁI · TƯỚI THÔNG MINH</span></div><div className={`route-pulse ${has("transport") ? "visible" : ""}`}><Route size={14} /><span>THUẬT TOÁN ĐỔI TUYẾN ĐANG CHẠY</span></div>
+
+        <div className="map-legend"><span><i className="legend-mint" /> sản xuất</span><span><i className="legend-amber" /> dự trữ / ứng phó</span><span><i className="legend-cyan" /> dòng vận chuyển</span></div><div className="world-title-card"><span>BẢN ĐỒ XÃ HỘI THU NHỎ / DÒNG LƯƠNG THỰC THỜI GIAN THỰC</span><strong>Quan sát hệ thống.<br />Xem cách nó phản ứng.</strong></div>
+      </div></div>
+      <div className="viewport-hint"><span>KÉO ĐỂ DI CHUYỂN BẢN ĐỒ</span><span>CUỘN ĐỂ PHÓNG TO</span></div>
     </div>
 
-    <aside className="scenario-console"><div className="console-head"><span><span className="status-dot" /> SCENARIO CONTROL</span><span>{paused ? "MANUAL" : "AUTO"}</span></div><div className="scenario-buttons">{scenarios.map((item) => { const Icon = item.icon; return <button key={item.id} className={scenarioId === item.id ? `active ${item.color}` : ""} onClick={() => activate(item.id)}><Icon size={13} /><span>{item.label}</span></button>; })}</div><div className="console-event"><span className={`event-dot ${scenario.color}`} /><div><small>EVENT STREAM / {scenario.label}</small><strong>{scenario.event}</strong><span>{scenario.consequence}</span></div></div><div className="console-actions"><button onClick={() => setPaused((value) => !value)}>{paused ? <Play size={12} /> : <Pause size={12} />} {paused ? "RESUME" : "PAUSE"}</button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })}>RESET VIEW</button></div></aside>
+    <aside className="scenario-console"><div className="console-head"><span><span className="status-dot" /> ĐIỀU KHIỂN KỊCH BẢN</span><span>{paused ? "THỦ CÔNG" : "TỰ ĐỘNG"}</span></div><div className="scenario-buttons">{scenarios.map((item) => { const Icon = item.icon; return <button key={item.id} title={item.label} className={activeScenarios.includes(item.id) ? `active ${item.color}` : ""} onClick={() => activate(item.id)}><Icon size={13} /><span>{item.label}</span></button>; })}</div><div className="active-stack"><span>ĐANG CHẠY ĐỒNG THỜI</span><strong>{activeText}</strong></div><div className="console-event"><span className={`event-dot ${active[active.length - 1]?.color ?? "mint"}`} /><div><small>LUỒNG SỰ KIỆN / {activeText}</small><strong>{active[active.length - 1]?.event}</strong><span>{active[active.length - 1]?.effect}</span></div></div><div className="console-actions"><button onClick={() => setPaused((value) => !value)}>{paused ? <Play size={12} /> : <Pause size={12} />} {paused ? "TIẾP TỤC" : "TẠM DỪNG"}</button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })}>ĐẶT LẠI GÓC NHÌN</button></div></aside>
 
-    <aside className="world-metrics"><div className="metrics-head"><span>WORLD TELEMETRY</span><Activity size={12} /></div><div className="metric-row"><span>Production</span><b>{metrics.production}%</b><i style={{ width: `${metrics.production}%` }} /></div><div className="metric-row"><span>Reserves</span><b>{metrics.reserves}%</b><i className="amber" style={{ width: `${metrics.reserves}%` }} /></div><div className="metric-row"><span>Food access</span><b>{metrics.access}%</b><i className="cyan" style={{ width: `${metrics.access}%` }} /></div><div className="metrics-foot"><span>Risk</span><b className={scenarioId === "normal" ? "good" : "warn"}>{metrics.risk}</b><span className="truck-count"><Truck size={12} /> {metrics.trucks}</span></div></aside>
-
-    <div className="pillar-rail"><span className="rail-label">SYSTEM WEIGHT</span><span><b>55</b> production + reserves</span><span><b>30</b> transport + access</span><span><b>15</b> warning + response</span></div>
-
-    {selectedCopy && <aside className="object-inspector"><button className="inspector-close" onClick={() => setSelected(null)} aria-label="Close inspector"><X size={14} /></button><span className="inspector-type">{selectedCopy.type}</span><h2>{selectedCopy.title}</h2>{selectedCopy.lines.map((line) => <div className="inspector-line" key={line}>{line}</div>)}<div className="inspector-chain"><span>CONNECTED FLOW</span><strong>farm <ArrowDownRight size={11} /> reserve <ArrowDownRight size={11} /> route <ArrowDownRight size={11} /> town</strong></div></aside>}
-
-    <div className="zoom-controls"><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.min(1.45, current.zoom + .08) }))} aria-label="Zoom in"><Plus size={15} /></button><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.max(.72, current.zoom - .08) }))} aria-label="Zoom out"><ZoomOut size={15} /></button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })} aria-label="Reset zoom"><MapPin size={14} /></button></div>
-    <div className="world-statusbar"><span><span className="status-dot" /> 5 SENSOR STREAMS ONLINE</span><span>SIMULATED REAL-TIME DATA · NO BACKEND REQUIRED</span><span>55 / 30 / 15 SYSTEM ACTIVE</span></div>
+    <aside className="world-metrics"><div className="metrics-head"><span>ĐO LƯỜNG XÃ HỘI</span><Activity size={12} /></div><div className="metric-row"><span>Sản lượng</span><b>{metrics.production}%</b><i style={{ width: `${metrics.production}%` }} /></div><div className="metric-row"><span>Dự trữ</span><b>{metrics.reserves}%</b><i className="amber" style={{ width: `${metrics.reserves}%` }} /></div><div className="metric-row"><span>Tiếp cận thực phẩm</span><b>{metrics.access}%</b><i className="cyan" style={{ width: `${metrics.access}%` }} /></div><div className="metrics-foot"><span>Rủi ro</span><b className={activeScenarios.length === 1 && has("normal") ? "good" : "warn"}>{metrics.risk}</b><span className="truck-count"><Truck size={12} /> {metrics.trucks}</span></div></aside>
+    <div className="pillar-rail"><span className="rail-label">TRỌNG SỐ HỆ THỐNG</span><span><b>55</b> sản xuất + dự trữ</span><span><b>30</b> vận tải + tiếp cận</span><span><b>15</b> cảnh báo + ứng phó</span></div>
+    {selectedCopy && <aside className="object-inspector"><button className="inspector-close" onClick={() => setSelected(null)} aria-label="Đóng bảng thông tin"><X size={14} /></button><span className="inspector-type">{selectedCopy.type}</span><h2>{selectedCopy.title}</h2>{selectedCopy.lines.map((line) => <div className="inspector-line" key={line}>{line}</div>)}<div className="inspector-chain"><span>CHUỖI LIÊN KẾT</span><strong>nông trại <ArrowDownRight size={11} /> kho <ArrowDownRight size={11} /> vận tải <ArrowDownRight size={11} /> chợ</strong></div></aside>}
+    <div className="zoom-controls"><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.min(1.52, current.zoom + .08) }))} aria-label="Phóng to"><Plus size={15} /></button><button onClick={() => setCamera((current) => ({ ...current, zoom: Math.max(.68, current.zoom - .08) }))} aria-label="Thu nhỏ"><ZoomOut size={15} /></button><button onClick={() => setCamera({ x: 0, y: 0, zoom: 1 })} aria-label="Đặt lại"><MapPin size={14} /></button></div>
+    <div className="world-statusbar"><span><span className="status-dot" /> 5 LUỒNG CẢM BIẾN TRỰC TUYẾN</span><span>DỮ LIỆU MÔ PHỎNG THỜI GIAN THỰC · KHÔNG CẦN MÁY CHỦ</span><span>HỆ THỐNG 55 / 30 / 15 ĐANG CHẠY</span></div>
   </main>;
 }
+
+function HomeIcon() { return <span className="home-icon"><span /><span /><span /></span>; }
 
 export default Home;
