@@ -188,6 +188,61 @@ function PillarVisual({ id }: { id: PillarId }) {
   </div>;
 }
 
+function RealtimeSystemModel() {
+  const [phase, setPhase] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [focusedNode, setFocusedNode] = useState("hub");
+  const phases = [
+    { label: "MONITOR", action: "5 lớp dữ liệu đang cập nhật", color: "mint", production: 92, reserves: 84, risk: "THẤP" },
+    { label: "DETECT RISK", action: "Cảm biến phát hiện tín hiệu bất thường", color: "amber", production: 84, reserves: 82, risk: "TĂNG" },
+    { label: "ACTIVATE", action: "Kho chiến lược mở luồng phân phối", color: "amber", production: 77, reserves: 68, risk: "CAO" },
+    { label: "REROUTE", action: "Mạng vận chuyển chuyển sang tuyến thay thế", color: "cyan", production: 79, reserves: 64, risk: "CAO" },
+    { label: "RECOVER", action: "Khu vực ảnh hưởng đang ổn định trở lại", color: "mint", production: 86, reserves: 72, risk: "GIẢM" },
+  ];
+  const current = phases[phase];
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = window.setInterval(() => setPhase((value) => (value + 1) % phases.length), 1200);
+    return () => window.clearInterval(timer);
+  }, [paused, phases.length]);
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width - .5) * 2;
+    const y = ((event.clientY - rect.top) / rect.height - .5) * 2;
+    event.currentTarget.style.setProperty("--model-rx", `${(y * -2).toFixed(2)}deg`);
+    event.currentTarget.style.setProperty("--model-ry", `${(x * 3).toFixed(2)}deg`);
+  };
+
+  const node = (id: string, className: string, icon: React.ReactNode, title: string, value: string, detail: string, tone = "mint") => (
+    <button className={`model-node ${className} ${focusedNode === id ? "is-focused" : ""}`} onMouseEnter={() => setFocusedNode(id)} onFocus={() => setFocusedNode(id)} onClick={() => { setFocusedNode(id); setPhase((value) => (value + 1) % phases.length); }}>
+      <span className={`model-node-icon ${tone}`}>{icon}</span><span className="model-node-copy"><b>{value}</b><strong>{title}</strong><small>{detail}</small></span><span className="model-node-signal" />
+    </button>
+  );
+
+  return <div className="realtime-model" onPointerMove={handlePointerMove} onPointerLeave={(event) => { event.currentTarget.style.setProperty("--model-rx", "0deg"); event.currentTarget.style.setProperty("--model-ry", "0deg"); }}>
+    <div className="model-topbar"><span className="model-mode"><span className="status-dot" /> REAL-TIME OPERATING MODEL</span><span className="model-coordinates">VN / GRID 07 · 09:42:18</span></div>
+    <div className="model-scene">
+      <div className="model-backdrop" /><div className="model-horizon-line" /><div className="model-plane" />
+      <svg className="model-links" viewBox="0 0 1000 430" aria-hidden="true">
+        <defs><linearGradient id="modelMint" x1="0" x2="1"><stop stopColor="#9df3c5" stopOpacity=".05" /><stop offset=".5" stopColor="#9df3c5" stopOpacity=".9" /><stop offset="1" stopColor="#78d9ee" stopOpacity=".12" /></linearGradient><linearGradient id="modelAmber" x1="0" x2="1"><stop stopColor="#f8bd71" stopOpacity=".05" /><stop offset=".5" stopColor="#f8bd71" stopOpacity=".85" /><stop offset="1" stopColor="#9df3c5" stopOpacity=".1" /></linearGradient></defs>
+        <path className={`model-link ${phase === 1 ? "link-alert" : ""}`} d="M183 144 C275 144 322 198 427 210" stroke="url(#modelMint)" /><path className="model-link" d="M817 144 C725 144 678 198 573 210" stroke="url(#modelAmber)" /><path className={`model-link ${phase === 2 ? "link-alert" : ""}`} d="M183 330 C275 330 322 260 427 238" stroke="url(#modelAmber)" /><path className={`model-link ${phase === 3 ? "link-alert" : ""}`} d="M817 330 C725 330 678 260 573 238" stroke="url(#modelMint)" /><path className="model-loop" d="M500 101 C800 12 995 130 900 337 C800 532 200 532 100 337 C5 130 200 12 500 101" stroke="url(#modelMint)" />
+        <circle className="model-particle particle-a" r="4" fill="#9df3c5" /><circle className="model-particle particle-b" r="4" fill="#f8bd71" /><circle className="model-particle particle-c" r="4" fill="#78d9ee" />
+      </svg>
+      <div className="model-stage-label label-monitor">MONITOR</div><div className="model-stage-label label-detect">DETECT</div><div className="model-stage-label label-act">ACTIVATE</div><div className="model-stage-label label-route">REROUTE</div>
+      {node("farm", "model-farm", <Sprout size={18} />, "SẢN XUẤT", `${current.production}%`, "cảm biến · mùa vụ")}
+      {node("reserve", "model-reserve", <Warehouse size={18} />, "KHO DỰ TRỮ", `${current.reserves}%`, "tồn kho · luân chuyển", "amber")}
+      {node("warning", "model-warning", <Siren size={18} />, "CẢNH BÁO", current.risk, "ngưỡng · kịch bản", "amber")}
+      {node("transport", "model-transport", <Truck size={18} />, "VẬN CHUYỂN", phase === 3 ? "2 / 3" : "3 / 3", "tuyến hoạt động", "cyan")}
+      {node("access", "model-access", <Globe2 size={18} />, "TIẾP CẬN", "98%", "đúng nơi · đúng lúc", "cyan")}
+      <div className={`model-core ${focusedNode === "hub" ? "is-focused" : ""}`} onMouseEnter={() => setFocusedNode("hub")}><div className="model-core-icon"><Activity size={20} /></div><strong>FOOD SECURITY OS</strong><span>LIVE RESPONSE CORE</span><small>phase {String(phase + 1).padStart(2, "0")} / 05</small></div>
+      <div className="model-telemetry telemetry-weather"><Thermometer size={10} /> 31°C · gió 12km/h</div><div className="model-telemetry telemetry-price"><DollarSign size={10} /> giá +2.1%</div><div className="model-telemetry telemetry-route"><Route size={10} /> tuyến thay thế sẵn sàng</div>
+    </div>
+    <div className="model-bottom"><div className="model-event"><span className={`event-pulse ${current.color}`} /><div><span>EVENT STREAM / {current.label}</span><strong>{current.action}</strong></div></div><div className="model-controls"><button className="model-play" onClick={() => setPaused((value) => !value)}>{paused ? "PLAY" : "PAUSE"}</button><div className="phase-dots">{phases.map((item, index) => <button key={item.label} className={index === phase ? "active" : ""} onClick={() => { setPhase(index); setPaused(true); }} aria-label={item.label} />)}</div><span className="model-live-readout"><ScanLine size={11} /> {paused ? "MANUAL" : "AUTO"} · 1200ms</span></div></div>
+  </div>;
+}
+
 function Home() {
   const [expandedPillar, setExpandedPillar] = useState<PillarId>("production");
   const [highlightedPillar, setHighlightedPillar] = useState<PillarId | null>(null);
@@ -273,6 +328,7 @@ function Home() {
 
           <div className="system-panel" id="system">
               <div className="system-topline"><span className="system-title">Bản đồ tích hợp / tất cả các mắt xích trong một vòng lặp</span><span><Wifi size={12} /> 99.98% tín hiệu ổn định</span></div>
+            <RealtimeSystemModel />
             <div className="flow-stage">
               <div className="integrated-diagram" aria-label="Sơ đồ tích hợp hệ thống an ninh lương thực">
                 <div className="diagram-grid-bg" />
